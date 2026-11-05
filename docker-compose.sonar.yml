@@ -1,0 +1,93 @@
+# =====================================================================
+#  SonarQube (Community Build) para analizar el código de Atlas
+#
+#  Este archivo es INDEPENDIENTE de docker-compose.yml: puedes tener
+#  Atlas encendido sin SonarQube (y al revés). Se usa con:
+#
+#     docker compose --env-file .env.sonar -f docker-compose.sonar.yml up -d
+#
+#  o, más fácil, con el script:   .\sonar.cmd up
+#  Ver instrucciones completas en la sección "SonarQube" del README.md
+# =====================================================================
+
+name: atlas-sonar
+
+# Definición común de los "scanners" (los que leen el código y lo envían
+# a SonarQube). Solo se ejecutan cuando tú lo pides (perfil "scan").
+x-scanner: &scanner
+  image: sonarsource/sonar-scanner-cli:latest
+  profiles: ["scan"]
+  environment:
+    SONAR_HOST_URL: http://sonarqube:9000
+    SONAR_TOKEN: ${SONAR_TOKEN:-}
+  networks:
+    - atlas-sonar-network
+
+services:
+  # ---- Base de datos propia de SonarQube (no es la base de Atlas) ----
+  sonar-db:
+    image: postgres:17
+    container_name: atlas-sonar-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - atlas-sonar-network
+    restart: "no"
+
+  # ---- Servidor SonarQube (interfaz web en http://localhost:9000) ----
+  sonarqube:
+    image: sonarqube:community
+    container_name: atlas-sonarqube
+    hostname: sonarqube
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      # Solo para uso local/desarrollo: evita que Elasticsearch (motor de
+      # búsqueda interno de SonarQube) se niegue a iniciar en Docker Desktop
+      # por el parámetro vm.max_map_count. No usar así en producción.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    ports:
+      - "${PORT_SONARQUBE:-9000}:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - atlas-sonar-network
+    restart: "no"
+
+  # ---- Scanner del BACKEND (lee ./BACKEND/sonar-project.properties) ----
+  scanner-backend:
+    <<: *scanner
+    volumes:
+      - ./BACKEND:/usr/src
+
+  # ---- Scanner del FRONTEND (lee ./FRONTEND/sonar-project.properties) ----
+  scanner-frontend:
+    <<: *scanner
+    volumes:
+      - ./FRONTEND:/usr/src
+
+volumes:
+  sonar_db_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+
+networks:
+  atlas-sonar-network:
+    driver: bridge
+    name: atlas-sonar-network

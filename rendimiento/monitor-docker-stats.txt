@@ -1,0 +1,46 @@
+MONITOR DE DOCKER STATS (PowerShell)
+
+1. En la terminal donde usaras docker stats, desde la raiz del proyecto:
+
+   .\rendimiento\monitor-docker-stats.ps1 -Activar
+
+2. Para comenzar a mostrar y guardar las mediciones:
+
+   docker stats
+
+3. Espera a que aparezcan las primeras lecturas. Ejecuta k6 en la otra
+   terminal, dejando este monitor abierto durante toda la prueba.
+
+4. Cuando termine k6, vuelve al monitor y presiona Ctrl+C.
+
+La integracion solo afecta esta terminal. No inicia k6 ni modifica la base
+de datos. Los otros comandos docker se envian al ejecutable original.
+Mientras esta activa, usa docker stats sin argumentos adicionales.
+
+Una unica salida continua de Docker alimenta la pantalla y el CSV:
+los valores mostrados son los mismos que se guardan, sin otra consulta
+independiente. La pantalla agrega nuevas filas en lugar de borrarlas.
+
+En reportes se crean archivos con fecha y hora, sin reemplazar los anteriores:
+- docker-stats-*.csv: todas las lecturas mostradas, con fecha/hora de recepcion.
+- docker-stats-*-maximos.txt: maximos observados de atlas-backend-et.
+
+Los maximos se actualizan en disco en cada muestra del backend, no solo
+al detener el monitor. CPU y memoria pueden alcanzar sus maximos en
+momentos distintos. Son maximos de las muestras registradas: no permiten
+conocer picos que ocurran entre muestras. Docker redondea los valores.
+Red y disco son contadores acumulados, no valores exclusivos de k6.
+
+Para quitar la integracion de esta terminal:
+
+   Remove-Item Function:\docker
+
+Cerrar la terminal tambien la desactiva.
+
+Alternativa sin integrar el comando docker:
+
+   .\rendimiento\monitor-docker-stats.ps1
+
+Para comprobar una sola lectura sin dejar el monitor ejecutandose:
+
+   .\rendimiento\monitor-docker-stats.ps1 -UnaLectura

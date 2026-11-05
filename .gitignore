@@ -1,0 +1,18 @@
+# Herramientas descargadas
+node_modules/
+ 
+# Datos secretos y configuración local (NUNCA se suben)
+.env
+.env.sonar
+BACKEND/.env
+FRONTEND/.env
+ 
+# Informes generados por las pruebas
+BACKEND/coverage/
+e2e/playwright-report/
+e2e/test-results/
+reportes/
+ 
+# Archivos subidos por los usuarios
+BACKEND/uploads/contracts/*
+!BACKEND/uploads/contracts/.gitkeep

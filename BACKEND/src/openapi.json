@@ -1,0 +1,1401 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Atlas API (español)",
+    "version": "1.0.0"
+  },
+  "servers": [{ "url": "http://localhost:4451" }],
+  "paths": {
+    "/autenticacion/login": {
+      "post": {
+        "summary": "Iniciar sesión",
+        "description": "Retorna un token JWT que incluye: usuarioId, nombreUsuario, empresaUsuarioId, empresaId",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre_usuario": { "type": "string" },
+                  "password": { "type": "string" }
+                },
+                "required": ["nombre_usuario", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "description": "Token JWT con información del usuario y empresa"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "summary": "Listar usuarios",
+        "description": "Lista todos los usuarios de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      },
+      "post": {
+        "summary": "Crear usuario",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UsuarioCrear" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Creado" } }
+      }
+    },
+    "/usuarios/{id}": {
+      "get": {
+        "summary": "Obtener usuario",
+        "description": "Obtiene la información de un usuario específico, incluyendo su rol en la empresa.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Usuario no encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar usuario",
+        "description": "Actualiza la información de un usuario. Puede incluir actualización de rol. No se puede cambiar el rol del único administrador ni el propio rol.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nombre_usuario": { "type": "string" },
+                  "contrasena_hash": { "type": "string" },
+                  "correo": { "type": "string" },
+                  "rol_id": {
+                    "type": "integer",
+                    "description": "ID del rol a asignar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "400": { "description": "No se puede cambiar el rol" },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Usuario no encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar usuario",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuario eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Usuario no encontrado" }
+        }
+      }
+    },
+    "/clientes": {
+      "get": {
+        "summary": "Listar clientes",
+        "description": "Lista todos los clientes de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      },
+      "post": {
+        "summary": "Crear cliente",
+        "description": "Crea un nuevo cliente asociado a la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Cliente" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/clientes/search": {
+      "get": {
+        "summary": "Buscar clientes por nombre",
+        "description": "Busca clientes por nombre (filtrado por empresa del token)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "name",
+            "schema": { "type": "string" },
+            "description": "Nombre del cliente a buscar"
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/clientes/{id}": {
+      "get": {
+        "summary": "Obtener cliente",
+        "description": "Obtiene la información de un cliente específico de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Cliente no encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar cliente",
+        "description": "Actualiza la información de un cliente de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Cliente" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Cliente no encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar cliente",
+        "description": "Elimina un cliente de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Cliente no encontrado" }
+        }
+      }
+    },
+    "/contratos": {
+      "get": {
+        "summary": "Listar contratos",
+        "description": "Lista todos los contratos de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      },
+      "post": {
+        "summary": "Crear contrato con archivo(s)",
+        "description": "Crea un contrato con uno o más archivos. Se pueden enviar hasta 10 archivos.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cliente_id": { "type": "integer" },
+                  "titulo": { "type": "string" },
+                  "descripcion": { "type": "string" },
+                  "fecha_inicio": { "type": "string", "format": "date" },
+                  "fecha_fin": { "type": "string", "format": "date" },
+                  "files": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "description": "Hasta 10 archivos PDF"
+                  }
+                },
+                "required": [
+                  "cliente_id",
+                  "titulo",
+                  "fecha_inicio",
+                  "fecha_fin",
+                  "files"
+                ]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Creado" } }
+      }
+    },
+    "/contratos/estados": {
+      "get": {
+        "summary": "Obtener contratos por estado",
+        "description": "Retorna un array con contratos por estado (por_vencer y vencido). Máximo 3 contratos por cada estado, filtrados por empresa del token.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContratoConEstado"
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/contratos/dashboard": {
+      "get": {
+        "summary": "Dashboard con estadísticas de la empresa",
+        "description": "Retorna estadísticas de la empresa: total usuarios, total clientes y contratos que vencen en 7, 15 y 30 días.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/contratos/{id}": {
+      "get": {
+        "summary": "Obtener contrato",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Contrato no encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar contrato",
+        "description": "Actualiza los datos de un contrato. Todos los campos son opcionales. Si se envía un archivo, se agregará como nuevo documento manteniendo el historial.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cliente_id": { "type": "integer" },
+                  "titulo": { "type": "string" },
+                  "descripcion": { "type": "string" },
+                  "fecha_inicio": { "type": "string", "format": "date" },
+                  "fecha_fin": { "type": "string", "format": "date" },
+                  "files": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" },
+                    "description": "Hasta 10 archivos PDF. Si se envía, se agregarán como nuevos documentos manteniendo el historial."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cliente_id": { "type": "integer" },
+                  "titulo": { "type": "string" },
+                  "descripcion": { "type": "string" },
+                  "fecha_inicio": { "type": "string", "format": "date" },
+                  "fecha_fin": { "type": "string", "format": "date" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "cliente_id": { "type": "integer" },
+                    "titulo": { "type": "string" },
+                    "descripcion": { "type": "string" },
+                    "fecha_inicio": { "type": "string", "format": "date" },
+                    "fecha_fin": { "type": "string", "format": "date" },
+                    "created_at": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": {
+            "description": "Contrato no encontrado o no pertenece a tu empresa"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar contrato",
+        "description": "Elimina un contrato y todos sus archivos asociados.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contrato eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Contrato no encontrado" }
+        }
+      }
+    },
+    "/contratos/{id}/files": {
+      "get": {
+        "summary": "Listar archivos del contrato",
+        "description": "Retorna la lista de todos los archivos asociados a un contrato, ordenados por fecha de creación descendente.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "nombre_archivo": { "type": "string" },
+                      "created_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Contrato no encontrado" }
+        }
+      }
+    },
+    "/contratos/{id}/file/{fileId}": {
+      "get": {
+        "summary": "Descargar archivo específico del contrato",
+        "description": "Descarga un archivo PDF específico de un contrato por su ID de archivo.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "ID del contrato"
+          },
+          {
+            "in": "path",
+            "name": "fileId",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "ID del archivo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo PDF",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Archivo no encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar archivo específico del contrato",
+        "description": "Elimina un archivo específico de un contrato. Requiere autenticación y que el contrato pertenezca a la empresa del usuario.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "ID del contrato"
+          },
+          {
+            "in": "path",
+            "name": "fileId",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "ID del archivo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": { "description": "Contrato o archivo no encontrado" }
+        }
+      }
+    },
+    "/contratos/{id}/file": {
+      "get": {
+        "summary": "Ver último archivo PDF del contrato",
+        "description": "Endpoint legacy que retorna el último archivo subido del contrato (para compatibilidad).",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo PDF",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "404": { "description": "Archivo no encontrado" }
+        }
+      }
+    },
+    "/contratos/{id}/share": {
+      "post": {
+        "summary": "Generar enlace compartido para contrato",
+        "description": "Genera un enlace compartido con contraseña para acceder al contrato de forma pública. La contraseña debe tener al menos 4 caracteres.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 4,
+                    "description": "Contraseña para acceder al contrato compartido (mínimo 4 caracteres)"
+                  }
+                },
+                "required": ["password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Enlace compartido generado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "shareUrl": { "type": "string", "format": "uri" },
+                    "shareToken": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Contraseña inválida" },
+          "401": { "description": "No autorizado" },
+          "404": {
+            "description": "Contrato no encontrado o no pertenece a tu empresa"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Desactivar enlace compartido",
+        "description": "Desactiva el enlace compartido de un contrato.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace desactivado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": {
+            "description": "Contrato no encontrado o no pertenece a tu empresa"
+          }
+        }
+      },
+      "get": {
+        "summary": "Obtener información del enlace compartido",
+        "description": "Obtiene la información del enlace compartido de un contrato (solo para el dueño del contrato).",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Información del enlace compartido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "shareEnabled": { "type": "boolean" },
+                    "shareToken": { "type": "string", "nullable": true },
+                    "shareUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" },
+          "404": {
+            "description": "Contrato no encontrado o no pertenece a tu empresa"
+          }
+        }
+      }
+    },
+    "/auditoria": {
+      "get": {
+        "summary": "Listar auditoría",
+        "description": "Lista todos los registros de auditoría de la empresa del usuario autenticado.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      },
+      "post": {
+        "summary": "Registrar auditoría",
+        "description": "Registra un nuevo evento en la auditoría. El usuario se obtiene del token JWT.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuditoriaCrear" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/empresas": {
+      "get": {
+        "summary": "Listar empresas",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "summary": "Crear empresa",
+        "description": "Acepta dos formatos: formato simple (solo empresa) o formato completo (empresa con usuario). Si se envía usuario y empresa, crea automáticamente el usuario, la empresa y la relación empresa-usuario con rol administrador.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Empresa" },
+                  { "$ref": "#/components/schemas/EmpresaConUsuario" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Creado" } }
+      }
+    },
+    "/empresas/{id}": {
+      "get": {
+        "summary": "Obtener empresa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "put": {
+        "summary": "Actualizar empresa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Empresa" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "delete": {
+        "summary": "Eliminar empresa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/roles": {
+      "get": {
+        "summary": "Listar roles",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "summary": "Crear rol",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Rol" }
+            }
+          }
+        },
+        "responses": { "201": { "description": "Creado" } }
+      }
+    },
+    "/roles/{id}": {
+      "get": {
+        "summary": "Obtener rol",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      },
+      "put": {
+        "summary": "Actualizar rol",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Rol" }
+            }
+          }
+        },
+        "responses": { "200": { "description": "OK" } }
+      },
+      "delete": {
+        "summary": "Eliminar rol",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/empresa-usuarios": {
+      "get": {
+        "summary": "Listar vínculos empresa-usuarios",
+        "description": "Lista todos los usuarios vinculados a la empresa del usuario autenticado, incluyendo sus roles.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK" },
+          "401": { "description": "No autorizado" }
+        }
+      },
+      "post": {
+        "summary": "Crear vínculo",
+        "description": "Crea un vínculo entre un usuario y la empresa del usuario autenticado. Puede crear un nuevo usuario o vincular uno existente.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "usuario_id": {
+                    "type": "integer",
+                    "description": "ID del usuario existente (opcional si se proporcionan datos del usuario)"
+                  },
+                  "rol_id": {
+                    "type": "integer",
+                    "description": "ID del rol a asignar"
+                  },
+                  "nombre_usuario": {
+                    "type": "string",
+                    "description": "Nombre de usuario (requerido si no se proporciona usuario_id)"
+                  },
+                  "contrasena_hash": {
+                    "type": "string",
+                    "description": "Contraseña hash (requerido si no se proporciona usuario_id)"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "description": "Correo electrónico (requerido si no se proporciona usuario_id)"
+                  }
+                },
+                "required": ["rol_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Creado" },
+          "400": { "description": "Datos inválidos" },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/empresa-usuarios/{id}": {
+      "get": {
+        "summary": "Obtener vínculo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Vínculo no encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar vínculo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EmpresaUsuario" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK" },
+          "404": { "description": "Vínculo no encontrado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar vínculo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": { "type": "integer" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vínculo eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "description": "Vínculo no encontrado" }
+        }
+      }
+    },
+    "/metricas": {
+      "get": {
+        "summary": "Obtener métricas de la empresa",
+        "description": "Retorna información sobre contratos próximos a vencer, contratos vencidos y métricas generales de la empresa (usuarios, clientes, contratos que vencen en 15 y 30 días).",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Metricas"
+                }
+              }
+            }
+          },
+          "401": { "description": "No autorizado" }
+        }
+      }
+    },
+    "/public/contratos/{token}/verify": {
+      "post": {
+        "summary": "Verificar contraseña de contrato compartido",
+        "description": "Endpoint público para verificar la contraseña y obtener información básica de un contrato compartido.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "Token del contrato compartido"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "Contraseña del contrato compartido"
+                  }
+                },
+                "required": ["password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña verificada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "titulo": { "type": "string" },
+                    "descripcion": { "type": "string", "nullable": true },
+                    "fecha_inicio": { "type": "string", "format": "date" },
+                    "fecha_fin": { "type": "string", "format": "date" },
+                    "cliente_nombre": { "type": "string" },
+                    "verified": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Contraseña requerida" },
+          "401": { "description": "Contraseña incorrecta" },
+          "403": { "description": "Enlace desactivado" },
+          "404": { "description": "Contrato no encontrado" }
+        }
+      }
+    },
+    "/public/contratos/{token}/files": {
+      "get": {
+        "summary": "Listar archivos de contrato compartido",
+        "description": "Endpoint público para listar los archivos de un contrato compartido. Requiere la contraseña como query parameter.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "Token del contrato compartido"
+          },
+          {
+            "in": "query",
+            "name": "password",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "Contraseña del contrato compartido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de archivos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "integer" },
+                      "nombre_archivo": { "type": "string" },
+                      "created_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Contraseña requerida" },
+          "401": { "description": "Contraseña incorrecta" },
+          "403": { "description": "Enlace desactivado" },
+          "404": { "description": "Contrato no encontrado" }
+        }
+      }
+    },
+    "/public/contratos/{token}/file/{fileId}": {
+      "get": {
+        "summary": "Descargar archivo de contrato compartido",
+        "description": "Endpoint público para descargar un archivo específico de un contrato compartido. Requiere la contraseña como query parameter.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "Token del contrato compartido"
+          },
+          {
+            "in": "path",
+            "name": "fileId",
+            "schema": { "type": "integer" },
+            "required": true,
+            "description": "ID del archivo"
+          },
+          {
+            "in": "query",
+            "name": "password",
+            "schema": { "type": "string" },
+            "required": true,
+            "description": "Contraseña del contrato compartido"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archivo PDF",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "400": { "description": "Contraseña requerida" },
+          "401": { "description": "Contraseña incorrecta" },
+          "403": { "description": "Enlace desactivado" },
+          "404": { "description": "Contrato o archivo no encontrado" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UsuarioCrear": {
+        "type": "object",
+        "properties": {
+          "nombre_usuario": { "type": "string" },
+          "contrasena_hash": { "type": "string" },
+          "correo": { "type": "string" }
+        },
+        "required": ["nombre_usuario", "contrasena_hash", "correo"]
+      },
+      "Cliente": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "correo": { "type": "string" },
+          "telefono": { "type": "string" },
+          "direccion": { "type": "string" },
+          "es_empresa": { "type": "boolean" },
+          "nombre_banco": { "type": "string" },
+          "numero_cuenta": { "type": "string" },
+          "titular_cuenta": { "type": "string" }
+        },
+        "required": ["nombre", "correo"],
+        "description": "El campo empresa_id se obtiene automáticamente del token JWT"
+      },
+      "ContratoForm": {
+        "type": "object",
+        "properties": {
+          "cliente_id": { "type": "integer" },
+          "titulo": { "type": "string" },
+          "descripcion": { "type": "string" },
+          "fecha_inicio": { "type": "string", "format": "date" },
+          "fecha_fin": { "type": "string", "format": "date" },
+          "files": {
+            "type": "array",
+            "items": { "type": "string", "format": "binary" },
+            "description": "Hasta 10 archivos PDF"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "titulo",
+          "fecha_inicio",
+          "fecha_fin",
+          "files"
+        ]
+      },
+      "AuditoriaCrear": {
+        "type": "object",
+        "properties": {
+          "accion": { "type": "string" },
+          "detalles": { "type": "string" }
+        },
+        "required": ["accion"]
+      },
+      "Empresa": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "direccion": { "type": "string" },
+          "telefono": { "type": "string" },
+          "correo": { "type": "string" }
+        },
+        "required": ["nombre", "correo"]
+      },
+      "Rol": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" }
+        },
+        "required": ["nombre"]
+      },
+      "EmpresaUsuario": {
+        "type": "object",
+        "properties": {
+          "empresa_id": { "type": "integer" },
+          "usuario_id": { "type": "integer" },
+          "rol_id": { "type": "integer" }
+        },
+        "required": ["empresa_id", "usuario_id", "rol_id"]
+      },
+      "ContratoConEstado": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "cliente_id": { "type": "integer" },
+          "titulo": { "type": "string" },
+          "descripcion": { "type": "string" },
+          "fecha_inicio": { "type": "string", "format": "date" },
+          "fecha_fin": { "type": "string", "format": "date" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "estado": { "type": "string", "enum": ["por_vencer", "vencido"] }
+        }
+      },
+      "Dashboard": {
+        "type": "object",
+        "properties": {
+          "totalUsuarios": {
+            "type": "integer",
+            "description": "Total de usuarios asociados a la empresa"
+          },
+          "totalClientes": {
+            "type": "integer",
+            "description": "Total de clientes de la empresa"
+          },
+          "contratosVencen7Dias": {
+            "type": "integer",
+            "description": "Contratos que vencen en los próximos 7 días"
+          },
+          "contratosVencen15Dias": {
+            "type": "integer",
+            "description": "Contratos que vencen en los próximos 15 días"
+          },
+          "contratosVencen30Dias": {
+            "type": "integer",
+            "description": "Contratos que vencen en los próximos 30 días"
+          }
+        }
+      },
+      "EmpresaConUsuario": {
+        "type": "object",
+        "properties": {
+          "usuario": {
+            "type": "object",
+            "properties": {
+              "nombre_usuario": { "type": "string" },
+              "contrasena_hash": { "type": "string" },
+              "correo": { "type": "string" }
+            },
+            "required": ["nombre_usuario", "contrasena_hash", "correo"]
+          },
+          "empresa": {
+            "$ref": "#/components/schemas/Empresa"
+          }
+        },
+        "required": ["usuario", "empresa"]
+      },
+      "ContratoProximoAVencer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "cliente": { "type": "string" },
+          "fechaVencimiento": { "type": "string", "format": "date" },
+          "diasRestantes": { "type": "integer" }
+        }
+      },
+      "ContratoVencido": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "cliente": { "type": "string" },
+          "fechaVencimiento": { "type": "string", "format": "date" },
+          "diasVencidos": { "type": "integer" }
+        }
+      },
+      "MetricasEmpresa": {
+        "type": "object",
+        "properties": {
+          "totalUsuarios": {
+            "type": "integer",
+            "description": "Cantidad de usuarios asociados a la empresa"
+          },
+          "totalClientes": {
+            "type": "integer",
+            "description": "Cantidad de clientes de la empresa"
+          },
+          "contratos15Dias": {
+            "type": "integer",
+            "description": "Cantidad de contratos que vencen en los siguientes 15 días"
+          },
+          "contratos30Dias": {
+            "type": "integer",
+            "description": "Cantidad de contratos que vencen en los siguientes 30 días"
+          }
+        }
+      },
+      "Metricas": {
+        "type": "object",
+        "properties": {
+          "contratosProximosAVencer": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ContratoProximoAVencer" },
+            "description": "10 contratos próximos a vencer"
+          },
+          "contratosVencidos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ContratoVencido" },
+            "description": "10 contratos ya vencidos"
+          },
+          "metricas": {
+            "$ref": "#/components/schemas/MetricasEmpresa"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtenido del endpoint /autenticacion/login"
+      }
+    }
+  }
+}
