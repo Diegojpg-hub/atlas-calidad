@@ -29,6 +29,9 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: BACKEND/package-lock.json
+
+      - name: Probar diagnóstico de SonarCloud
+        run: node --test .github/scripts/sonar-quality-gate-report.test.js
  
       - name: Instalar dependencias del backend
         working-directory: BACKEND
@@ -46,6 +49,7 @@ jobs:
           path: BACKEND/coverage
  
       - name: SonarQube Cloud - Backend
+        id: sonar_backend
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -56,8 +60,17 @@ jobs:
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ vars.SONAR_KEY_BACKEND }}
             -Dsonar.qualitygate.wait=true
+            -Dsonar.scanner.metadataFilePath=${{ runner.temp }}/sonar-backend-task.txt
+
+      - name: Detalle del Quality Gate - Backend
+        if: ${{ failure() && steps.sonar_backend.outcome == 'failure' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TASK_FILE: ${{ runner.temp }}/sonar-backend-task.txt
+        run: node .github/scripts/sonar-quality-gate-report.js backend
  
       - name: SonarQube Cloud - Frontend
+        id: sonar_frontend
         uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -68,6 +81,14 @@ jobs:
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ vars.SONAR_KEY_FRONTEND }}
             -Dsonar.qualitygate.wait=true
+            -Dsonar.scanner.metadataFilePath=${{ runner.temp }}/sonar-frontend-task.txt
+
+      - name: Detalle del Quality Gate - Frontend
+        if: ${{ failure() && steps.sonar_frontend.outcome == 'failure' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TASK_FILE: ${{ runner.temp }}/sonar-frontend-task.txt
+        run: node .github/scripts/sonar-quality-gate-report.js frontend
  
   # ------------------------------------------------------------------
   # 2) Construir las imágenes Docker y escanearlas con Trivy
