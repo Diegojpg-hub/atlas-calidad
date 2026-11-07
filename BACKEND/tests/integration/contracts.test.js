@@ -182,6 +182,46 @@ describe("POST /contratos", () => {
     expect(pool.query).toHaveBeenCalledTimes(2);
   });
 
+  test("201 guarda un archivo adjunto al crear el contrato", async () => {
+    const contrato = { id: 15, cliente_id: 3, titulo: "Servicio anual" };
+    const archivo = Buffer.from("contenido del contrato");
+    pool.query
+      .mockResolvedValueOnce({ rows: [contrato] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app)
+      .post("/contratos")
+      .set("Authorization", `Bearer ${token}`)
+      .field("cliente_id", "3")
+      .field("titulo", "Servicio anual")
+      .field("fecha_inicio", "2026-01-01")
+      .field("fecha_fin", "2026-12-31")
+      .attach("files", archivo, "contrato.pdf");
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual(contrato);
+    expect(pool.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("INSERT INTO documentos_contrato"),
+      [15, archivo, "contrato.pdf"]
+    );
+    expect(pool.query).toHaveBeenCalledTimes(3);
+  });
+
+  test("rechaza archivos que superan el límite de 10 MB", async () => {
+    const res = await request(app)
+      .post("/contratos")
+      .field("cliente_id", "3")
+      .field("titulo", "Servicio anual")
+      .field("fecha_inicio", "2026-01-01")
+      .field("fecha_fin", "2026-12-31")
+      .attach("files", Buffer.alloc(10 * 1024 * 1024 + 1), "grande.pdf");
+
+    expect(res.status).toBe(500);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
   test("500 si falla la inserción", async () => {
     pool.query.mockRejectedValueOnce(new Error("conexión perdida"));
 
@@ -193,5 +233,31 @@ describe("POST /contratos", () => {
     });
 
     expect(res.status).toBe(500);
+  });
+});
+
+describe("PUT /contratos/:id", () => {
+  test("200 guarda un archivo adjunto al actualizar el contrato", async () => {
+    const contrato = { id: 15, cliente_id: 3, titulo: "Servicio anual" };
+    const archivo = Buffer.from("contenido del anexo");
+    pool.query
+      .mockResolvedValueOnce({ rows: [contrato] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [contrato] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const res = await request(app)
+      .put("/contratos/15")
+      .set("Authorization", `Bearer ${token}`)
+      .attach("files", archivo, "anexo.pdf");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(contrato);
+    expect(pool.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("INSERT INTO documentos_contrato"),
+      ["15", archivo, "anexo.pdf"]
+    );
+    expect(pool.query).toHaveBeenCalledTimes(4);
   });
 });
