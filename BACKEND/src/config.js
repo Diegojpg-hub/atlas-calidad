@@ -1,4 +1,4 @@
-// Configuración central de la API de Atlas.
+// Configuración central de la API.
 // Si falta una variable crítica, la aplicación NO arranca (falla rápido y seguro).
 require("dotenv").config();
  
