@@ -50,6 +50,21 @@ test('reports when the scanner failed but the gate has no failed conditions', as
   assert.match(report, /no devolvio condiciones fallidas/);
 });
 
+test('reports when SonarCloud has no quality gate result', async () => {
+  const report = await getReport({
+    metadata,
+    token: 'test-token',
+    project: 'backend',
+    fetchImpl: mockFetch(
+      { task: { status: 'SUCCESS', analysisId: 'a1' } },
+      { projectStatus: { status: 'NONE', conditions: [], periods: [] } },
+      [],
+    ),
+  });
+  assert.match(report, /Estado del analisis: \*\*NONE\*\*/);
+  assert.match(report, /no hay un resultado del Quality Gate disponible/);
+});
+
 test('makes missing condition values explicit', async () => {
   const report = await getReport({
     metadata,
