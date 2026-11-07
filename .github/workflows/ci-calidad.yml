@@ -122,6 +122,7 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
+          # trivyignores: .trivyignore
  
   # ------------------------------------------------------------------
   # 3) Levantar Atlas completo y probarlo en ejecución
