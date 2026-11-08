@@ -94,6 +94,31 @@ esta. La construcción comprueba las versiones originales de npm, node-gyp y
 undici y falla si cambian, para revisar el override al actualizar la imagen
 base.
 
+En esa misma copia, `minimatch 10.2.5` y las entradas compiladas de
+`glob 13.0.6` utilizan un adaptador local derivado de `brace-expansion 5.0.9`.
+El adaptador evita los recorridos recursivos por grupos consecutivos, limita el
+anidamiento y elimina las llamadas con grandes listas de argumentos que podían
+agotar la pila; también conserva la variante de escapes que ya incluía `glob`.
+Se elimina el paquete original y se reutiliza
+`balanced-match 4.0.4`, que ya estaba incluido en npm: no se instala una
+versión adicional. La licencia MIT se conserva en
+`licenses/brace-expansion-MIT.txt`.
+
+Por defecto se aplican los límites de 100.000 resultados y 4.000.000 caracteres
+totales, también a las expansiones intermedias. `minimatch` ya tenía ambos
+límites, pero el código integrado anterior de `glob` no limitaba el total de
+caracteres: los patrones que lo superen pueden producir menos resultados que
+antes. Se rechazan con `RangeError` los patrones de más de 65.536 caracteres,
+los anidamientos de más de 256 niveles, las reescrituras malformadas que
+superen 256 pasos y los límites no finitos. El límite de resultados puede
+ajustarse con `braceExpandMax` y el de caracteres en el adaptador interno;
+aumentarlos incrementa el uso de recursos y solo debe hacerse con patrones
+confiables. El instalador comprueba versiones, ubicaciones y huellas del código
+antes de modificarlo y vuelve a comprobar la instalación si se ejecuta otra
+vez. Si cambian npm, `minimatch`, `glob` o `balanced-match`, la construcción
+falla hasta que se revise el adaptador; esta integración no es una
+compatibilidad declarada por sus proveedores.
+
 ## Base de datos
 1. Crear base de datos local (si no existe):
    ```sql

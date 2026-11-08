@@ -29,11 +29,15 @@ RUN node -e 'const base="/usr/local/lib/node_modules/npm/"; const expected={"pac
     && ln -sf ../lib/npm-managed/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
     && node -e 'const fs=require("fs"); const file="/usr/local/lib/npm-managed/package.json"; const manifest=JSON.parse(fs.readFileSync(file,"utf8")); manifest.dependencies.npm=require("/usr/local/lib/npm-managed/node_modules/npm/package.json").version; fs.writeFileSync(file,JSON.stringify(manifest,null,2)+"\n");'
 COPY --from=npm-undici /npm-undici/node_modules/undici /usr/local/lib/npm-managed/node_modules/undici
-RUN npm ls --prefix /usr/local/lib/npm-managed --all --json > /dev/null \
+COPY npm-runtime/brace-expansion-compat.cjs npm-runtime/brace-expansion-compat.mjs npm-runtime/patch-brace-expansion.cjs /usr/local/lib/npm-managed/atlas-tools/
+RUN node /usr/local/lib/npm-managed/atlas-tools/patch-brace-expansion.cjs /usr/local/lib/npm-managed \
+    && node /usr/local/lib/npm-managed/atlas-tools/patch-brace-expansion.cjs /usr/local/lib/npm-managed \
+    && npm ls --prefix /usr/local/lib/npm-managed --all --json > /dev/null \
     && npm ls --global --all --json > /dev/null
  
 COPY src/ ./src/
 COPY licenses/path-to-regexp-MIT.txt ./licenses/path-to-regexp-MIT.txt
+COPY licenses/brace-expansion-MIT.txt ./licenses/brace-expansion-MIT.txt
 COPY sql/ ./sql/
  
 # Carpeta para archivos subidos; su dueño es "node", un usuario SIN permisos de administrador

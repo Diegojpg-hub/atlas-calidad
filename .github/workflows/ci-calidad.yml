@@ -114,7 +114,7 @@ jobs:
           docker build -t atlas-${{ matrix.nombre }}:${{ github.sha }}
           ./${{ matrix.carpeta }}
 
-      - name: Verificar npm y node-gyp del backend
+      - name: Verificar npm, node-gyp y expansión de llaves del backend
         if: ${{ matrix.nombre == 'backend' }}
         run: |
           set -eu
@@ -130,9 +130,10 @@ jobs:
           docker run --rm --network none \
             --mount "type=bind,source=$fixtures,target=/test-fixtures,readonly" \
             --mount "type=bind,source=$GITHUB_WORKSPACE/BACKEND/tests/container/node-gyp-undici.check.js,target=/node-gyp-undici.check.js,readonly" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE/BACKEND/tests/container/brace-expansion.check.js,target=/brace-expansion.check.js,readonly" \
             --env TEST_NPM_ROOT=/usr/local/lib/npm-managed/node_modules/npm \
             --entrypoint node "atlas-backend:${{ github.sha }}" \
-            --test /node-gyp-undici.check.js
+            --test --test-concurrency=1 /node-gyp-undici.check.js /brace-expansion.check.js
  
       - name: Escanear la imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
