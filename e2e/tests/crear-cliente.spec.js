@@ -12,6 +12,12 @@ test('Reto 1: crear un cliente y verificar que aparece en la lista', async ({ pa
   await page.getByTestId('input-password').click();
   await page.getByTestId('input-password').fill('admin');
   await page.getByTestId('input-password').press('Enter');
+  await expect(page).toHaveURL(/\/home$/);
+  await expect(page.getByRole('main')).toBeVisible();
+  const menu = page.getByTestId('button-layout-menu');
+  if (await menu.isVisible()) {
+    await menu.click();
+  }
   await page.getByTestId('link-nav-clientes').click();
   await page.getByRole('tab', { name: 'Crear Cliente' }).click();
   await page.getByRole('textbox', { name: 'RUT' }).click();
