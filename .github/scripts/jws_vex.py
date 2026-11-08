@@ -12,7 +12,12 @@ import tarfile
 import uuid
 
 
-APPROVED_FILESYSTEM_SHA256 = "58e7ceb0375a72e619dd0a28e39b3f78fedd0a7c7bac10e0ab99bd394ef095ba"
+APPROVED_FILESYSTEM_SHA256 = frozenset(
+    {
+        "58e7ceb0375a72e619dd0a28e39b3f78fedd0a7c7bac10e0ab99bd394ef095ba",
+        "6dcc487516533770a2c8a9b24770f3bb78d236d1fcd9ea536a54409e8dc5e468",
+    }
+)
 APPROVED_COMPOSE_SHA256 = "34784286affbd1a0b47ffedd59b6d44b81546c2a3eaf677f76e5201a6fdaf8d6"
 EXPECTED_CONFIG = {
     "User": "node",
@@ -97,7 +102,7 @@ def filesystem_sha256(stream):
 
 
 def statement_for_image(inspection, reference, container_image_id, filesystem_hash, compose_hash):
-    if filesystem_hash != APPROVED_FILESYSTEM_SHA256:
+    if filesystem_hash not in APPROVED_FILESYSTEM_SHA256:
         raise ReviewRequired(
             "Cambió el contenido de la imagen; revisar el uso de jws antes de "
             f"actualizar la huella aprobada ({filesystem_hash})."

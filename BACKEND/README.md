@@ -150,7 +150,10 @@ La generación de VEX comprueba el contenido completo del sistema de archivos
 de la imagen, su configuración de ejecución y `docker-compose.yml`. Si cambia
 cualquiera de ellos, el pipeline falla hasta que se revise nuevamente el uso
 de JWT, las dependencias, la configuración y el aviso antes de actualizar las
-huellas aprobadas en `.github/scripts/jws_vex.py`. La evaluación corresponde
+huellas aprobadas en `.github/scripts/jws_vex.py`. Las dos huellas aprobadas
+corresponden a la construcción local y a GitHub Actions: al compararlas solo
+difieren en rutas vacías de certificados añadidas por el entorno local.
+La evaluación corresponde
 al funcionamiento predeterminado revisado; un despliegue que cambie el
 comando, monte código o inyecte opciones de Node.js requiere otra evaluación.
 

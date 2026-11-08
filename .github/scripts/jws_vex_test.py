@@ -117,7 +117,7 @@ class StatementTests(unittest.TestCase):
         self.filesystem = jws_vex.filesystem_sha256(archive_for(FILES))
         self.compose = "reviewed-compose"
         self.patches = [
-            mock.patch.object(jws_vex, "APPROVED_FILESYSTEM_SHA256", self.filesystem),
+            mock.patch.object(jws_vex, "APPROVED_FILESYSTEM_SHA256", {self.filesystem}),
             mock.patch.object(jws_vex, "APPROVED_COMPOSE_SHA256", self.compose),
         ]
         for patch in self.patches:
