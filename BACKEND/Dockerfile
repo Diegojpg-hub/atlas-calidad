@@ -13,7 +13,9 @@ WORKDIR /app
 # Instalar solo lo necesario para funcionar (las herramientas de prueba NO entran)
 COPY package*.json ./
 COPY scripts/patch-express-proxy.js ./scripts/patch-express-proxy.js
+COPY scripts/patch-express-routing.js ./scripts/patch-express-routing.js
 COPY src/proxy-addr-compat.js ./src/proxy-addr-compat.js
+COPY src/path-to-regexp-compat.js ./src/path-to-regexp-compat.js
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Los overrides de npm no se aplican a dependencias empaquetadas; se gestiona
@@ -31,6 +33,7 @@ RUN npm ls --prefix /usr/local/lib/npm-managed --all --json > /dev/null \
     && npm ls --global --all --json > /dev/null
  
 COPY src/ ./src/
+COPY licenses/path-to-regexp-MIT.txt ./licenses/path-to-regexp-MIT.txt
 COPY sql/ ./sql/
  
 # Carpeta para archivos subidos; su dueño es "node", un usuario SIN permisos de administrador

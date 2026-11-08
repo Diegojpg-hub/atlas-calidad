@@ -46,6 +46,34 @@ subred realizan una comprobación adicional con `ip-address`. Los rangos
 predefinidos se obtienen de las redes especiales de `ipaddr.js 1.9.1` y también
 deben revisarse al cambiar esa versión.
 
+## Compatibilidad del enrutador
+
+Express 4.21.2 utiliza `src/path-to-regexp-compat.js` con
+`path-to-regexp 9.0.0`, publicada el 22 de octubre de 2026 a las 18:22:16.576
+UTC, después de la instalación original de `path-to-regexp` del 16 de octubre a
+las 23:10:30.828374 UTC. La versión 9 es ESM y no ofrece la API de Express 4.
+Durante `postinstall`, `@swc/wasm 1.16.22` la convierte a CommonJS para
+conservar el soporte de Node.js 18+, aunque todavía no se ha probado la
+instalación en Node.js 18. El compilador se publicó el 5 de noviembre de 2026 a
+las 10:49:32.325 UTC y no tiene dependencias; como no figura en la tabla, se
+toma como referencia la fecha de la dependencia sustituida.
+
+El adaptador no es compatibilidad declarada por Express: conserva las rutas
+actuales y la mayoría de formatos heredados, pero rechaza parámetros adyacentes
+en un segmento, como `/:a:b`, y rutas de texto con más de un comodín `*`. Use
+un separador entre parámetros y, cuando corresponda, una expresión regular
+explícita revisada para las rutas que requieran varios comodines. Las
+capturas de rutas con tres o más parámetros separados en un mismo segmento
+pueden cambiar respecto de `path-to-regexp 0.1.12`: `/:a-:b-:c` captura `a-b`,
+`c` y `d` para `/a-b-c-d`, en lugar de `a`, `b` y `c-d`. Las expresiones
+regulares suministradas directamente se conservan sin cambios; tanto estas
+como los patrones personalizados en rutas de texto deben revisarse por
+separado. La representación textual de las expresiones generadas puede diferir
+de la anterior. El código que necesite la API antigua debe importar el adaptador
+local; `require("path-to-regexp")` no ofrece esa API. Si cambian las versiones
+o ubicaciones esperadas, la instalación falla para obligar a revisar el
+adaptador.
+
 ## npm en la imagen del backend
 
 La imagen conserva los comandos `npm` y `npx`. Para corregir las
