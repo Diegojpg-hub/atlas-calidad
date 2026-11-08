@@ -142,9 +142,9 @@ hallazgos que cumplen esos criterios siguen bloqueando el control. Esta
 declaración no repara `jws` ni descarta otras vulnerabilidades de la biblioteca.
 El informe completo y la declaración se guardan como artefacto del pipeline, y
 la evaluación aparece también como advertencia y en el resumen del trabajo.
-Si falla la comprobación de la imagen, se guarda un inventario de rutas,
-metadatos y huellas para diagnosticar la diferencia, sin el contenido de los
-archivos.
+El diagnóstico guarda la identidad de la imagen y, cuando se genera, un
+inventario de rutas, metadatos y huellas sin el contenido de los archivos.
+También se conserva si falla la comprobación de la imagen.
 
 La generación de VEX comprueba el contenido completo del sistema de archivos
 de la imagen, su configuración de ejecución y `docker-compose.yml`. Si cambia
