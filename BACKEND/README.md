@@ -135,8 +135,8 @@ El pipeline muestra primero el análisis completo de Trivy sin VEX ni archivo
 de exclusiones, incluidas todas las severidades y las vulnerabilidades sin
 corrección disponible.
 Después genera una declaración OpenVEX `not_affected` únicamente para ese
-CVE, `jws 3.2.2` y la huella de la imagen revisada. El análisis que determina
-el resultado conserva visibles las alertas declaradas no afectadas y mantiene
+CVE y `jws 3.2.2`. El análisis que determina el resultado conserva visibles
+las alertas declaradas no afectadas y mantiene
 los criterios anteriores: HIGH/CRITICAL con `ignore-unfixed: true`. Los demás
 hallazgos que cumplen esos criterios siguen bloqueando el control. Esta
 declaración no repara `jws` ni descarta otras vulnerabilidades de la biblioteca.
@@ -152,8 +152,14 @@ cualquiera de ellos, el pipeline falla hasta que se revise nuevamente el uso
 de JWT, las dependencias, la configuración y el aviso antes de actualizar las
 huellas aprobadas en `.github/scripts/jws_vex.py`. Las dos huellas aprobadas
 corresponden a la construcción local y a GitHub Actions: al compararlas solo
-difieren en rutas vacías de certificados añadidas por el entorno local.
-La evaluación corresponde
+difieren en rutas vacías de certificados añadidas por el entorno local. Antes
+del análisis final se comprueba que la etiqueta siga apuntando a la misma
+imagen revisada.
+
+Como Trivy no genera un PURL de imagen cuando Docker no tiene `RepoDigest`,
+el archivo VEX identifica el componente `jws` directamente. La restricción a
+la imagen se garantiza en el pipeline, no por el PURL del archivo: **no se debe
+reutilizar esa declaración para otra imagen o proyecto**. La evaluación corresponde
 al funcionamiento predeterminado revisado; un despliegue que cambie el
 comando, monte código o inyecte opciones de Node.js requiere otra evaluación.
 

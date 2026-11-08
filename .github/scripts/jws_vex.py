@@ -127,8 +127,6 @@ def statement_for_image(inspection, reference, container_image_id, filesystem_ha
     tags = image.get("RepoTags")
     if not isinstance(tags, list) or reference not in tags:
         raise ReviewRequired("La etiqueta no corresponde a la imagen inspeccionada.")
-    if not tags or tags[0].rsplit(":", 1)[0] != "atlas-backend":
-        raise ReviewRequired("La primera referencia OCI no corresponde a atlas-backend.")
     if image.get("Os") != "linux" or image.get("Architecture") != "amd64":
         raise ReviewRequired("Cambió la plataforma de la imagen.")
 
@@ -139,11 +137,7 @@ def statement_for_image(inspection, reference, container_image_id, filesystem_ha
         if config.get(key) != expected:
             raise ReviewRequired(f"Cambió la configuración de ejecución: {key}.")
 
-    product = (
-        f"pkg:oci/atlas-backend@{image_id}"
-        "?arch=amd64&repository_url=index.docker.io%2Flibrary%2Fatlas-backend"
-    )
-    document_id = uuid.uuid5(uuid.NAMESPACE_URL, f"{product}#CVE-2025-65945")
+    document_id = uuid.uuid5(uuid.NAMESPACE_URL, f"{image_id}#CVE-2025-65945")
     return {
         "@context": "https://openvex.dev/ns/v0.2.0",
         "@id": f"urn:uuid:{document_id}",
@@ -153,15 +147,11 @@ def statement_for_image(inspection, reference, container_image_id, filesystem_ha
         "statements": [
             {
                 "vulnerability": {"name": "CVE-2025-65945"},
-                "products": [
-                    {
-                        "@id": product,
-                        "subcomponents": [{"@id": "pkg:npm/jws@3.2.2"}],
-                    }
-                ],
+                "products": [{"@id": "pkg:npm/jws@3.2.2"}],
                 "status": "not_affected",
                 "justification": "vulnerable_code_not_in_execute_path",
                 "impact_statement": (
+                    f"Evaluación válida solo para la imagen {image_id}. "
                     "La imagen revisada usa jsonwebtoken y jws.verify con "
                     "JWT_SECRET de configuración; no usa jws.createVerify para "
                     "buscar secretos a partir de datos del token. "

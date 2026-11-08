@@ -140,12 +140,8 @@ class StatementTests(unittest.TestCase):
         self.assertEqual(statement["vulnerability"]["name"], "CVE-2025-65945")
         self.assertEqual(statement["status"], "not_affected")
         self.assertEqual(statement["justification"], "vulnerable_code_not_in_execute_path")
-        self.assertEqual(statement["products"][0]["subcomponents"], [{"@id": "pkg:npm/jws@3.2.2"}])
-        self.assertEqual(
-            statement["products"][0]["@id"],
-            f"pkg:oci/atlas-backend@{IMAGE_ID}?arch=amd64"
-            "&repository_url=index.docker.io%2Flibrary%2Fatlas-backend",
-        )
+        self.assertEqual(statement["products"], [{"@id": "pkg:npm/jws@3.2.2"}])
+        self.assertIn(IMAGE_ID, statement["impact_statement"])
 
     def test_rejects_changes_to_image_and_deployment(self):
         for arguments in [
@@ -164,7 +160,6 @@ class StatementTests(unittest.TestCase):
             ("Os", "windows"),
             ("Architecture", "arm64"),
             ("RepoTags", ["atlas-backend:other"]),
-            ("RepoTags", ["other:latest", REFERENCE]),
             ("Id", "not-a-digest"),
         ]
         for key, value in mutations:

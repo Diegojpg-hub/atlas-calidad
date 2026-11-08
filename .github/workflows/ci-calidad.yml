@@ -170,6 +170,7 @@ jobs:
             --container-image-id "$image_id" --compose docker-compose.yml \
             --manifest-output "$RUNNER_TEMP/atlas-backend-huellas.json" \
             > "$RUNNER_TEMP/atlas-backend-jws.openvex.json"
+          printf '%s\n' "$image_id" > "$RUNNER_TEMP/atlas-backend-revisada.id"
           echo "::warning title=CVE-2025-65945::jws 3.2.2 se conserva sin reparar; el uso revisado no está afectado."
           {
             echo "### jws 3.2.2: CVE-2025-65945 (HIGH)"
@@ -196,6 +197,17 @@ jobs:
             ${{ runner.temp }}/trivy-backend-completo.txt
             ${{ runner.temp }}/atlas-backend-jws.openvex.json
           if-no-files-found: error
+
+      - name: Verificar la imagen antes de aplicar VEX
+        if: ${{ matrix.nombre == 'backend' }}
+        run: |
+          set -euo pipefail
+          reviewed="$(cat "$RUNNER_TEMP/atlas-backend-revisada.id")"
+          actual="$(docker image inspect --format '{{.Id}}' "atlas-backend:$GITHUB_SHA")"
+          if [ "$reviewed" != "$actual" ]; then
+            echo "La imagen cambió después de la evaluación; no se aplicará VEX." >&2
+            exit 1
+          fi
 
       - name: Escanear la imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
