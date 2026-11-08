@@ -26,5 +26,14 @@
     "jest": "^30.5.2",
     "nodemon": "^3.1.0",
     "supertest": "^7.3.1"
+  },
+  "overrides": {
+    "express": {
+      "body-parser": {
+        ".": "1.20.9",
+        "raw-body": "2.5.2",
+        "http-errors": "2.0.0"
+      }
+    }
   }
 }

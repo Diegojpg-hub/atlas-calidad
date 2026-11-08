@@ -11,6 +11,14 @@ API en Node.js (Express) con PostgreSQL. Intencionalmente vulnerable para fines 
 npm install
 ```
 
+`overrides` fija `body-parser` en 1.20.9 para corregir el fallo con cuerpos
+comprimidos. Conserva `raw-body` 2.5.2 y `http-errors` 2.0.0, ya presentes en el
+proyecto, aunque están fuera de los rangos declarados por `body-parser`. Se
+compararon sus implementaciones con las versiones requeridas: el código de
+ejecución de `raw-body` es idéntico y el cambio de `http-errors` es equivalente
+en Node.js 24. Estas reglas deben revisarse al actualizar Express o
+`body-parser`.
+
 ## Base de datos
 1. Crear base de datos local (si no existe):
    ```sql
