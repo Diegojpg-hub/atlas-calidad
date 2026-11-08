@@ -134,15 +134,71 @@ jobs:
             --env TEST_NPM_ROOT=/usr/local/lib/npm-managed/node_modules/npm \
             --entrypoint node "atlas-backend:${{ github.sha }}" \
             --test --test-concurrency=1 /node-gyp-undici.check.js /brace-expansion.check.js
- 
+
+      - name: Analizar el backend con Trivy sin excepciones
+        if: ${{ matrix.nombre == 'backend' }}
+        uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_IGNOREFILE: /dev/null
+          TRIVY_VEX: ''
+        with:
+          image-ref: atlas-backend:${{ github.sha }}
+          format: table
+          output: ${{ runner.temp }}/trivy-backend-completo.txt
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '0'
+
+      - name: Mostrar todos los hallazgos del backend
+        if: ${{ matrix.nombre == 'backend' }}
+        run: cat "$RUNNER_TEMP/trivy-backend-completo.txt"
+
+      - name: Comprobar la evaluación de jws
+        if: ${{ matrix.nombre == 'backend' }}
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/jws_vex_test.py
+          image="atlas-backend:$GITHUB_SHA"
+          inspection="$RUNNER_TEMP/atlas-backend-inspect.json"
+          docker image inspect "$image" > "$inspection"
+          container="$(docker create --network none "$image")"
+          trap 'docker rm "$container" >/dev/null' EXIT
+          image_id="$(docker container inspect --format '{{.Image}}' "$container")"
+          docker export "$container" | python3 .github/scripts/jws_vex.py \
+            --inspect "$inspection" --reference "$image" \
+            --container-image-id "$image_id" --compose docker-compose.yml \
+            > "$RUNNER_TEMP/atlas-backend-jws.openvex.json"
+          echo "::warning title=CVE-2025-65945::jws 3.2.2 se conserva sin reparar; el uso revisado no está afectado."
+          {
+            echo "### jws 3.2.2: CVE-2025-65945 (HIGH)"
+            echo "El primer informe muestra el hallazgo sin excepciones. El control lo declara no afectado solo para la imagen y el uso revisados; no es una reparación."
+            echo "El control conserva HIGH/CRITICAL e ignore-unfixed=true; los demás hallazgos que cumplen esos criterios siguen bloqueándolo."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar el informe completo y la evaluación de jws
+        if: ${{ matrix.nombre == 'backend' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-backend-evaluacion-jws
+          path: |
+            ${{ runner.temp }}/trivy-backend-completo.txt
+            ${{ runner.temp }}/atlas-backend-jws.openvex.json
+          if-no-files-found: error
+
       - name: Escanear la imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_IGNOREFILE: /dev/null
+          TRIVY_VEX: ${{ matrix.nombre == 'backend' && format('{0}/atlas-backend-jws.openvex.json', runner.temp) || '' }}
+          TRIVY_SHOW_SUPPRESSED: 'true'
         with:
           image-ref: atlas-${{ matrix.nombre }}:${{ github.sha }}
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
+          skip-setup-trivy: ${{ matrix.nombre == 'backend' }}
+          cache: ${{ matrix.nombre != 'backend' }}
           # trivyignores: .trivyignore
  
   # ------------------------------------------------------------------

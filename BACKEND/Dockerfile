@@ -33,7 +33,9 @@ COPY npm-runtime/brace-expansion-compat.cjs npm-runtime/brace-expansion-compat.m
 RUN node /usr/local/lib/npm-managed/atlas-tools/patch-brace-expansion.cjs /usr/local/lib/npm-managed \
     && node /usr/local/lib/npm-managed/atlas-tools/patch-brace-expansion.cjs /usr/local/lib/npm-managed \
     && npm ls --prefix /usr/local/lib/npm-managed --all --json > /dev/null \
-    && npm ls --global --all --json > /dev/null
+    && npm ls --global --all --json > /dev/null \
+    && rm -rf /tmp/node-compile-cache /root/.npm/_logs \
+    && rm -f /tmp/scarf-js-history-root.log
  
 COPY src/ ./src/
 COPY licenses/path-to-regexp-MIT.txt ./licenses/path-to-regexp-MIT.txt

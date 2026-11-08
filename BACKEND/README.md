@@ -119,6 +119,38 @@ vez. Si cambian npm, `minimatch`, `glob` o `balanced-match`, la construcción
 falla hasta que se revise el adaptador; esta integración no es una
 compatibilidad declarada por sus proveedores.
 
+Al finalizar la construcción se eliminan los registros y la caché temporal
+de compilación generados por npm. No se eliminan npm ni npx; los archivos
+temporales pueden regenerarse cuando se ejecuten.
+
+## Evaluación de Trivy para jws
+
+La imagen mantiene `jws 3.2.2` sin modificar. El
+[aviso oficial de CVE-2025-65945](https://github.com/advisories/GHSA-869p-cjfg-cm3x)
+indica que quienes usan `jsonwebtoken` y `jws.verify` no están afectados por
+ese problema. Atlas usa `jsonwebtoken` con `JWT_SECRET` de configuración; no
+usa `jws.createVerify` para buscar secretos a partir de datos del token.
+
+El pipeline muestra primero el análisis completo de Trivy sin VEX ni archivo
+de exclusiones, incluidas todas las severidades y las vulnerabilidades sin
+corrección disponible.
+Después genera una declaración OpenVEX `not_affected` únicamente para ese
+CVE, `jws 3.2.2` y la huella de la imagen revisada. El análisis que determina
+el resultado conserva visibles las alertas declaradas no afectadas y mantiene
+los criterios anteriores: HIGH/CRITICAL con `ignore-unfixed: true`. Los demás
+hallazgos que cumplen esos criterios siguen bloqueando el control. Esta
+declaración no repara `jws` ni descarta otras vulnerabilidades de la biblioteca.
+El informe completo y la declaración se guardan como artefacto del pipeline, y
+la evaluación aparece también como advertencia y en el resumen del trabajo.
+
+La generación de VEX comprueba el contenido completo del sistema de archivos
+de la imagen, su configuración de ejecución y `docker-compose.yml`. Si cambia
+cualquiera de ellos, el pipeline falla hasta que se revise nuevamente el uso
+de JWT, las dependencias, la configuración y el aviso antes de actualizar las
+huellas aprobadas en `.github/scripts/jws_vex.py`. La evaluación corresponde
+al funcionamiento predeterminado revisado; un despliegue que cambie el
+comando, monte código o inyecte opciones de Node.js requiere otra evaluación.
+
 ## Base de datos
 1. Crear base de datos local (si no existe):
    ```sql
