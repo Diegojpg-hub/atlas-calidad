@@ -19,6 +19,7 @@ test('reports only failed conditions for the specific analysis', async () => {
     metadata,
     token: 'test-token',
     project: 'backend',
+    scannerOutcome: 'failure',
     fetchImpl: mockFetch(
       { task: { status: 'SUCCESS', analysisId: 'analysis-123' } },
       { projectStatus: { status: 'ERROR', conditions: [
@@ -36,18 +37,80 @@ test('reports only failed conditions for the specific analysis', async () => {
   assert.equal(calls[0].options.redirect, 'error');
 });
 
-test('reports when the scanner failed but the gate has no failed conditions', async () => {
+test('reports the approved gate and its conditions', async () => {
   const report = await getReport({
     metadata,
     token: 'test-token',
     project: 'frontend',
+    scannerOutcome: 'success',
+    fetchImpl: mockFetch(
+      { task: { status: 'SUCCESS', analysisId: 'a1' } },
+      { projectStatus: { status: 'OK', conditions: [
+        { status: 'OK', metricKey: 'new_coverage', comparator: 'LT', errorThreshold: '80', actualValue: '95.5' },
+      ] } },
+      [],
+    ),
+  });
+  assert.match(report, /Quality Gate aprobado/);
+  assert.match(report, /new_coverage \| LT \| 80 \| 95\.5/);
+});
+
+test('reports when the scanner failed but the gate passed', async () => {
+  const report = await getReport({
+    metadata,
+    token: 'test-token',
+    project: 'frontend',
+    scannerOutcome: 'failure',
     fetchImpl: mockFetch(
       { task: { status: 'SUCCESS', analysisId: 'a1' } },
       { projectStatus: { status: 'OK', conditions: [] } },
       [],
     ),
   });
-  assert.match(report, /no devolvio condiciones fallidas/);
+  assert.match(report, /Quality Gate aprobado/);
+  assert.match(report, /El scanner fallo por otra causa/);
+  assert.match(report, /no devolvio condiciones para este analisis/);
+});
+
+test('rejects a successful scanner result when the quality gate is not approved', async () => {
+  for (const status of ['WARN', 'ERROR', 'NONE']) {
+    await assert.rejects(getReport({
+      metadata,
+      token: 'test-token',
+      project: 'backend',
+      scannerOutcome: 'success',
+      fetchImpl: mockFetch(
+        { task: { status: 'SUCCESS', analysisId: 'a1' } },
+        { projectStatus: { status, conditions: [] } },
+        [],
+      ),
+    }), /El scanner informo exito, pero el Quality Gate devolvio/);
+  }
+});
+
+test('rejects an approved gate containing failed conditions', async () => {
+  await assert.rejects(getReport({
+    metadata,
+    token: 'test-token',
+    project: 'backend',
+    scannerOutcome: 'success',
+    fetchImpl: mockFetch(
+      { task: { status: 'SUCCESS', analysisId: 'a1' } },
+      { projectStatus: { status: 'OK', conditions: [
+        { status: 'ERROR', metricKey: 'new_coverage', comparator: 'LT', errorThreshold: '80', actualValue: '72' },
+      ] } },
+      [],
+    ),
+  }), /Quality Gate aprobado con condiciones fallidas/);
+});
+
+test('rejects invalid scanner outcomes', async () => {
+  await assert.rejects(getReport({
+    metadata,
+    token: 'test-token',
+    project: 'backend',
+    scannerOutcome: 'skipped',
+  }), /Resultado del scanner invalido/);
 });
 
 test('reports when SonarCloud has no quality gate result', async () => {

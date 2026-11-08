@@ -44,12 +44,15 @@ async function requestJson(path, token, fetchImpl) {
   }
 }
 
-async function getReport({ metadata, token, project, fetchImpl = fetch }) {
+async function getReport({ metadata, token, project, scannerOutcome, fetchImpl = fetch }) {
   if (!token) {
     throw new DiagnosticError('No hay un token disponible para consultar SonarCloud.');
   }
   if (!['backend', 'frontend'].includes(project)) {
     throw new DiagnosticError('Proyecto de diagnostico invalido.');
+  }
+  if (scannerOutcome !== undefined && !['success', 'failure'].includes(scannerOutcome)) {
+    throw new DiagnosticError('Resultado del scanner invalido.');
   }
 
   const taskId = taskIdFromMetadata(metadata);
@@ -72,8 +75,15 @@ async function getReport({ metadata, token, project, fetchImpl = fetch }) {
   if (!gate || !['OK', 'WARN', 'ERROR', 'NONE'].includes(gate.status) || !Array.isArray(gate.conditions)) {
     throw new DiagnosticError('SonarCloud no devolvio las condiciones del Quality Gate.');
   }
+  if (scannerOutcome === 'success' && gate.status !== 'OK') {
+    throw new DiagnosticError(`El scanner informo exito, pero el Quality Gate devolvio ${gate.status}.`);
+  }
 
   const failed = gate.conditions.filter((condition) => condition.status === 'ERROR');
+  if (gate.status === 'OK' && failed.length > 0) {
+    throw new DiagnosticError('SonarCloud devolvio un Quality Gate aprobado con condiciones fallidas.');
+  }
+  let conditions = [];
   const lines = [
     `## Quality Gate - ${project}`,
     '',
@@ -81,13 +91,25 @@ async function getReport({ metadata, token, project, fetchImpl = fetch }) {
     '',
   ];
 
-  if (gate.status === 'NONE') {
+  if (gate.status === 'OK') {
+    lines.push('Quality Gate aprobado para este analisis.');
+    if (scannerOutcome === 'failure') {
+      lines.push('El scanner fallo por otra causa; revisa su registro.');
+    }
+    conditions = gate.conditions;
+    if (conditions.length === 0) {
+      lines.push('SonarCloud no devolvio condiciones para este analisis.');
+    }
+  } else if (gate.status === 'NONE') {
     lines.push('SonarCloud devolvio NONE: no hay un resultado del Quality Gate disponible para este analisis.');
   } else if (failed.length === 0) {
     lines.push('SonarCloud no devolvio condiciones fallidas para este analisis. Revisa el registro del scanner.');
   } else {
+    conditions = failed;
+  }
+  if (conditions.length > 0) {
     lines.push('| Metrica | Comparador | Umbral | Valor |', '|---|---|---|---|');
-    for (const condition of failed) {
+    for (const condition of conditions) {
       lines.push(`| ${safeValue(condition.metricKey)} | ${safeValue(condition.comparator)} | ${safeValue(condition.errorThreshold)} | ${safeValue(condition.actualValue)} |`);
     }
   }
@@ -111,6 +133,7 @@ async function main() {
       metadata,
       token: process.env.SONAR_TOKEN,
       project: process.argv[2],
+      scannerOutcome: process.env.SONAR_SCAN_OUTCOME,
     });
   } catch (error) {
     failed = true;
