@@ -19,6 +19,26 @@ ejecución de `raw-body` es idéntico y el cambio de `http-errors` es equivalent
 en Node.js 24. Estas reglas deben revisarse al actualizar Express o
 `body-parser`.
 
+## npm en la imagen del backend
+
+La imagen conserva los comandos `npm` y `npx`. Para corregir las
+vulnerabilidades de `undici 6.28.0` incluidas en npm, se usa `undici 7.30.2`,
+publicado el 5 de noviembre de 2026 a las 09:06:58.994 UTC, después de la
+instalación original de npm del 17 de octubre de 2026 a las 15:08:44.646851 UTC,
+y sin dependencias adicionales. `node-gyp 12.4.0` declara `undici ^6.25.0`; el
+override es local y se comprueba con pruebas de descarga, TLS, proxies e
+instalación de cabeceras. No representa un cambio de compatibilidad declarado
+por el proveedor.
+
+Como npm no aplica overrides a dependencias empaquetadas, su copia se administra
+en `/usr/local/lib/npm-managed`. Sus ejecutables y el prefijo global siguen
+disponibles, pero `npm ls -g npm` ya no enumera la propia copia de npm; su árbol
+se consulta con `npm ls --prefix /usr/local/lib/npm-managed --all`. Una
+instalación global posterior de npm crearía otra copia en lugar de actualizar
+esta. La construcción comprueba las versiones originales de npm, node-gyp y
+undici y falla si cambian, para revisar el override al actualizar la imagen
+base.
+
 ## Base de datos
 1. Crear base de datos local (si no existe):
    ```sql

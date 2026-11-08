@@ -113,6 +113,26 @@ jobs:
         run: >
           docker build -t atlas-${{ matrix.nombre }}:${{ github.sha }}
           ./${{ matrix.carpeta }}
+
+      - name: Verificar npm y node-gyp del backend
+        if: ${{ matrix.nombre == 'backend' }}
+        run: |
+          set -eu
+          fixtures="$(mktemp -d)"
+          trap 'rm -f "$fixtures/key.pem" "$fixtures/cert.pem"; rmdir "$fixtures"' EXIT
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+            -quiet -out "$fixtures/key.pem"
+          openssl req -new -x509 -sha256 -days 1 -key "$fixtures/key.pem" \
+            -subj '/CN=localhost' -addext 'subjectAltName=DNS:localhost' \
+            -out "$fixtures/cert.pem"
+          chmod 755 "$fixtures"
+          chmod 644 "$fixtures/key.pem" "$fixtures/cert.pem"
+          docker run --rm --network none \
+            --mount "type=bind,source=$fixtures,target=/test-fixtures,readonly" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE/BACKEND/tests/container/node-gyp-undici.check.js,target=/node-gyp-undici.check.js,readonly" \
+            --env TEST_NPM_ROOT=/usr/local/lib/npm-managed/node_modules/npm \
+            --entrypoint node "atlas-backend:${{ github.sha }}" \
+            --test /node-gyp-undici.check.js
  
       - name: Escanear la imagen con Trivy
         uses: aquasecurity/trivy-action@v0.36.0
