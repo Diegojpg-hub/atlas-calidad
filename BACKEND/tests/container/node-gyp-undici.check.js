@@ -14,7 +14,7 @@ const zlib = require("node:zlib");
 
 const execFileAsync = promisify(execFile);
 const npmRoot = process.env.TEST_NPM_ROOT;
-assert.ok(npmRoot, "TEST_NPM_ROOT must identify the npm installation");
+if (!npmRoot) throw new Error("TEST_NPM_ROOT must identify the npm installation");
 const managedRoot = path.resolve(npmRoot, "../..");
 const gypRoot = path.join(npmRoot, "node_modules/node-gyp");
 const { download, readCAFile } = require(path.join(gypRoot, "lib/download"));
