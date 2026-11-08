@@ -12,6 +12,8 @@ WORKDIR /app
  
 # Instalar solo lo necesario para funcionar (las herramientas de prueba NO entran)
 COPY package*.json ./
+COPY scripts/patch-express-proxy.js ./scripts/patch-express-proxy.js
+COPY src/proxy-addr-compat.js ./src/proxy-addr-compat.js
 RUN npm ci --omit=dev && npm cache clean --force
 
 # Los overrides de npm no se aplican a dependencias empaquetadas; se gestiona

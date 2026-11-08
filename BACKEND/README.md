@@ -19,6 +19,31 @@ ejecución de `raw-body` es idéntico y el cambio de `http-errors` es equivalent
 en Node.js 24. Estas reglas deben revisarse al actualizar Express o
 `body-parser`.
 
+## Direcciones de clientes detrás de proxies
+
+`proxy-addr` se sustituye por `src/proxy-addr-compat.js`, que conserva las
+funciones utilizadas por Express y usa `ip-address 10.7.6` para comprobar
+subredes. Esta versión se publicó el 3 de noviembre de 2026 a las 16:58:46.090
+UTC, después de la instalación original de `proxy-addr` del 16 de octubre de
+2026 a las 23:10:30.828374 UTC. `ip-address` no figuraba como componente
+independiente en la tabla, por lo que se toma como referencia la fecha de la
+dependencia sustituida. `forwarded 0.2.0` e `ipaddr.js 1.9.1` ya estaban
+instalados y se mantienen sin cambios.
+
+El alias npm `proxy-addr` apunta realmente a `ip-address`: el código que
+necesite las funciones de `proxy-addr` debe importar el adaptador local, no el
+alias directamente. Durante `npm install` o `npm ci`, `postinstall` redirige
+dos imports de Express 4.21.2 al adaptador y comprueba las versiones esperadas;
+no es una compatibilidad declarada por Express. No debe instalarse el backend
+con `--ignore-scripts`. Si cambian Express, el alias o su ubicación, hay que
+revisar el adaptador antes de continuar.
+
+El valor predeterminado de `trust proxy` sigue siendo `false`. Al configurar
+proxies confiables, las subredes IPv4 expresadas como IPv6 mapeado con prefijo
+inferior a 96 no confían en ninguna dirección; para `10.0.0.0/8`, por ejemplo,
+se puede usar esa notación IPv4 o `::ffff:10.0.0.0/104`. Los recorridos de
+subred realizan una comprobación adicional con `ip-address`.
+
 ## npm en la imagen del backend
 
 La imagen conserva los comandos `npm` y `npx`. Para corregir las
