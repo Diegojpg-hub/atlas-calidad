@@ -4,10 +4,14 @@ const forwarded = require("forwarded");
 const ipaddr = require("ipaddr.js");
 const { Address4, Address6 } = require("proxy-addr");
 
+const ipv4Ranges = ipaddr.IPv4.prototype.SpecialRanges;
+const ipv6Ranges = ipaddr.IPv6.prototype.SpecialRanges;
+const subnetStrings = (entries) =>
+  entries.map(([address, prefix]) => `${address.toString()}/${prefix}`);
 const ranges = {
-  linklocal: ["169.254.0.0/16", "fe80::/10"],
-  loopback: ["127.0.0.1/8", "::1/128"],
-  uniquelocal: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"],
+  linklocal: subnetStrings([...ipv4Ranges.linkLocal, ipv6Ranges.linkLocal]),
+  loopback: subnetStrings([...ipv4Ranges.loopback, ipv6Ranges.loopback]),
+  uniquelocal: subnetStrings([...ipv4Ranges.private, ipv6Ranges.uniqueLocal]),
 };
 
 function parseSubnet(notation) {

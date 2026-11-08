@@ -42,7 +42,9 @@ El valor predeterminado de `trust proxy` sigue siendo `false`. Al configurar
 proxies confiables, las subredes IPv4 expresadas como IPv6 mapeado con prefijo
 inferior a 96 no confían en ninguna dirección; para `10.0.0.0/8`, por ejemplo,
 se puede usar esa notación IPv4 o `::ffff:10.0.0.0/104`. Los recorridos de
-subred realizan una comprobación adicional con `ip-address`.
+subred realizan una comprobación adicional con `ip-address`. Los rangos
+predefinidos se obtienen de las redes especiales de `ipaddr.js 1.9.1` y también
+deben revisarse al cambiar esa versión.
 
 ## npm en la imagen del backend
 

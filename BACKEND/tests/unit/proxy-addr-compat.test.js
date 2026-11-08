@@ -37,6 +37,34 @@ describe("Adaptador de direcciones detrás de proxies", () => {
   });
 
   test.each([
+    ["linklocal", "169.254.0.0", true],
+    ["linklocal", "169.254.255.255", true],
+    ["linklocal", "169.255.0.0", false],
+    ["linklocal", "fe80::", true],
+    ["linklocal", "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff", true],
+    ["linklocal", "fec0::", false],
+    ["loopback", "127.0.0.0", true],
+    ["loopback", "127.255.255.255", true],
+    ["loopback", "128.0.0.0", false],
+    ["loopback", "::1", true],
+    ["loopback", "::2", false],
+    ["uniquelocal", "10.0.0.0", true],
+    ["uniquelocal", "10.255.255.255", true],
+    ["uniquelocal", "11.0.0.0", false],
+    ["uniquelocal", "172.16.0.0", true],
+    ["uniquelocal", "172.31.255.255", true],
+    ["uniquelocal", "172.32.0.0", false],
+    ["uniquelocal", "192.168.0.0", true],
+    ["uniquelocal", "192.168.255.255", true],
+    ["uniquelocal", "192.169.0.0", false],
+    ["uniquelocal", "fc00::", true],
+    ["uniquelocal", "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", true],
+    ["uniquelocal", "fe00::", false],
+  ])("conserva el límite de %s para %s", (subnet, address, expected) => {
+    expect(proxyAddress.compile(subnet)(address)).toBe(expected);
+  });
+
+  test.each([
     undefined, null, "", 42, "no-es-una-ip", "10.0.0.1/",
     "10.0.0.1/0", "10.0.0.1/33", "10.0.0.1/255.0.255.0",
     "10.0.0.1/::1", "::1/129", "::1/-1", [undefined], new Array(1),
