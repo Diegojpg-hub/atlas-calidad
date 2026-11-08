@@ -154,6 +154,7 @@ jobs:
         run: cat "$RUNNER_TEMP/trivy-backend-completo.txt"
 
       - name: Comprobar la evaluación de jws
+        id: evaluar_jws
         if: ${{ matrix.nombre == 'backend' }}
         run: |
           set -euo pipefail
@@ -167,6 +168,7 @@ jobs:
           docker export "$container" | python3 .github/scripts/jws_vex.py \
             --inspect "$inspection" --reference "$image" \
             --container-image-id "$image_id" --compose docker-compose.yml \
+            --manifest-output "$RUNNER_TEMP/atlas-backend-huellas.json" \
             > "$RUNNER_TEMP/atlas-backend-jws.openvex.json"
           echo "::warning title=CVE-2025-65945::jws 3.2.2 se conserva sin reparar; el uso revisado no está afectado."
           {
@@ -174,6 +176,16 @@ jobs:
             echo "El primer informe muestra el hallazgo sin excepciones. El control lo declara no afectado solo para la imagen y el uso revisados; no es una reparación."
             echo "El control conserva HIGH/CRITICAL e ignore-unfixed=true; los demás hallazgos que cumplen esos criterios siguen bloqueándolo."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar diagnóstico si cambia la imagen
+        if: ${{ failure() && matrix.nombre == 'backend' && steps.evaluar_jws.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-backend-huella-diagnostico
+          path: |
+            ${{ runner.temp }}/trivy-backend-completo.txt
+            ${{ runner.temp }}/atlas-backend-huellas.json
+          if-no-files-found: error
 
       - name: Guardar el informe completo y la evaluación de jws
         if: ${{ matrix.nombre == 'backend' }}

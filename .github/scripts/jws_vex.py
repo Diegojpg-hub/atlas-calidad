@@ -87,10 +87,13 @@ def filesystem_entries(stream):
     return entries
 
 
-def filesystem_sha256(stream):
-    entries = filesystem_entries(stream)
+def entries_sha256(entries):
     encoded = json.dumps(entries, ensure_ascii=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
+
+
+def filesystem_sha256(stream):
+    return entries_sha256(filesystem_entries(stream))
 
 
 def statement_for_image(inspection, reference, container_image_id, filesystem_hash, compose_hash):
@@ -170,6 +173,7 @@ def main():
     parser.add_argument("--reference", required=True, help="Etiqueta analizada por Trivy")
     parser.add_argument("--container-image-id", required=True, help="Imagen del contenedor exportado")
     parser.add_argument("--compose", required=True, help="Archivo docker-compose.yml revisado")
+    parser.add_argument("--manifest-output", help="Guardar rutas y huellas para diagnóstico")
     args = parser.parse_args()
 
     try:
@@ -177,7 +181,11 @@ def main():
             inspection = json.load(file)
         with open(args.compose, "rb") as file:
             compose_hash = hashlib.sha256(file.read()).hexdigest()
-        filesystem_hash = filesystem_sha256(sys.stdin.buffer)
+        entries = filesystem_entries(sys.stdin.buffer)
+        if args.manifest_output:
+            with open(args.manifest_output, "w", encoding="utf-8") as file:
+                json.dump(entries, file, ensure_ascii=True, separators=(",", ":"))
+        filesystem_hash = entries_sha256(entries)
         document = statement_for_image(
             inspection, args.reference, args.container_image_id, filesystem_hash, compose_hash
         )

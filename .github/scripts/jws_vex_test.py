@@ -1,6 +1,11 @@
 import copy
 import io
+import json
+from pathlib import Path
+import subprocess
+import sys
 import tarfile
+import tempfile
 import unittest
 from unittest import mock
 
@@ -73,6 +78,38 @@ class FilesystemTests(unittest.TestCase):
             with self.subTest(entries=entries):
                 with self.assertRaises(jws_vex.ReviewRequired):
                     jws_vex.filesystem_sha256(archive_for(entries))
+
+    def test_failed_cli_exports_hashes_but_no_statement_or_file_contents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "inspect.json").write_text(json.dumps(inspection()), encoding="utf-8")
+            (root / "compose.yml").write_text("services: {}", encoding="utf-8")
+            manifest = root / "manifest.json"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(Path(jws_vex.__file__)),
+                    "--inspect",
+                    str(root / "inspect.json"),
+                    "--reference",
+                    REFERENCE,
+                    "--container-image-id",
+                    IMAGE_ID,
+                    "--compose",
+                    str(root / "compose.yml"),
+                    "--manifest-output",
+                    str(manifest),
+                ],
+                input=archive_for(FILES).getvalue(),
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(result.stdout, b"")
+            self.assertIn(b"Cambi", result.stderr)
+            entries = json.loads(manifest.read_text(encoding="utf-8"))
+            self.assertEqual(len(entries), len(FILES))
+            self.assertNotIn("verify(token, secret)", manifest.read_text(encoding="utf-8"))
 
 
 class StatementTests(unittest.TestCase):
