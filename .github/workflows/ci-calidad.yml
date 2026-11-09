@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
  
       - name: Configurar Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 24
           cache: npm
@@ -43,14 +43,14 @@ jobs:
  
       - name: Guardar reporte de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cobertura-backend
           path: BACKEND/coverage
  
       - name: SonarQube Cloud - Backend
         id: sonar_backend
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -72,7 +72,7 @@ jobs:
  
       - name: SonarQube Cloud - Frontend
         id: sonar_frontend
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@c7ee0f9df90b7aa20e8dcf9695dcfe2e7da5b4f2 # v7.2.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
@@ -111,7 +111,7 @@ jobs:
             artefacto: trivy-frontend-evaluacion
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
  
       - name: Construir la imagen
         run: >
@@ -157,7 +157,7 @@ jobs:
           fi
 
       - name: Analizar la imagen con Trivy sin excepciones
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         env:
           TRIVY_IGNOREFILE: /dev/null
           TRIVY_VEX: ''
@@ -228,7 +228,7 @@ jobs:
 
       - name: Guardar diagnóstico de la imagen
         if: ${{ !cancelled() && steps.informe_trivy.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: trivy-${{ matrix.nombre }}-huella-diagnostico
           path: ${{ runner.temp }}/atlas-${{ matrix.nombre }}-diagnostico
@@ -236,7 +236,7 @@ jobs:
 
       - name: Guardar el informe completo y la evaluación
         if: ${{ !cancelled() && steps.informe_trivy.outcome == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: ${{ steps.evaluar_jws.outcome == 'success' && matrix.artefacto || format('{0}-incompleto', matrix.artefacto) }}
           path: ${{ runner.temp }}/atlas-${{ matrix.nombre }}-evaluacion
@@ -256,7 +256,7 @@ jobs:
           echo "La imagen coincide con la revisada: $actual"
 
       - name: Escanear la imagen con Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         env:
           TRIVY_IGNOREFILE: /dev/null
           TRIVY_VEX: ${{ matrix.nombre == 'backend' && format('{0}/atlas-backend-evaluacion/atlas-backend-jws.openvex.json', runner.temp) || '' }}
@@ -280,7 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
  
       - name: Crear el archivo .env desde los secretos
         run: |
@@ -308,7 +308,7 @@ jobs:
           exit 1
  
       - name: Configurar Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 24
           cache: npm
@@ -326,14 +326,14 @@ jobs:
  
       - name: Guardar reporte de Playwright
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: reporte-playwright
           path: e2e/playwright-report
  
       - name: ZAP - Escaneo pasivo del frontend
         if: always()
-        uses: zaproxy/action-baseline@v0.15.0
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://localhost:3351
           allow_issue_writing: false
@@ -348,7 +348,7 @@ jobs:
  
       - name: ZAP - Escaneo de la API (OpenAPI)
         if: always()
-        uses: zaproxy/action-api-scan@v0.10.0
+        uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d # v0.10.0
         with:
           target: http://localhost:4451/openapi.json
           format: openapi
