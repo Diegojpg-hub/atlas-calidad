@@ -1,12 +1,12 @@
 # Dependencia de npm corregida y fijada independientemente de la aplicación
-FROM node:24-alpine AS npm-undici
+FROM node:26-alpine AS npm-undici
 
 WORKDIR /npm-undici
 COPY npm-runtime/package*.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --fund=false
 
 # Versión de Node.js con soporte vigente
-FROM node:24-alpine
+FROM node:26-alpine
  
 WORKDIR /app
  
