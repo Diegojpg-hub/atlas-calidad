@@ -23,7 +23,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.5.0",
     "path-to-regexp": "9.0.0",
-    "pg": "^8.12.0",
+    "pg": "^8.23.1",
     "proxy-addr": "npm:ip-address@10.7.6",
     "swagger-ui-express": "^5.0.1",
     "yup": "^1.7.1"
