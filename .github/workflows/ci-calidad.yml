@@ -30,8 +30,8 @@ jobs:
           cache: npm
           cache-dependency-path: BACKEND/package-lock.json
 
-      - name: Probar diagnóstico de SonarCloud
-        run: node --test .github/scripts/sonar-quality-gate-report.test.js
+      - name: Probar controles del pipeline
+        run: node --test .github/scripts/sonar-quality-gate-report.test.js .github/scripts/zap-high-alerts.test.js
  
       - name: Instalar dependencias del backend
         working-directory: BACKEND
@@ -337,8 +337,14 @@ jobs:
         with:
           target: http://localhost:3351
           allow_issue_writing: false
-          fail_action: false
+          fail_action: true
+          # El paso siguiente decide por riesgo High, no por el estado WARN.
+          cmd_options: -I
           artifact_name: zap-frontend
+
+      - name: Comprobar alertas High de frontend
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/zap-high-alerts.js report_json.json
  
       - name: ZAP - Escaneo de la API (OpenAPI)
         if: always()
@@ -347,8 +353,14 @@ jobs:
           target: http://localhost:4451/openapi.json
           format: openapi
           allow_issue_writing: false
-          fail_action: false
+          fail_action: true
+          # El paso siguiente decide por riesgo High, no por el estado WARN.
+          cmd_options: -I
           artifact_name: zap-api
+
+      - name: Comprobar alertas High de api
+        if: ${{ !cancelled() }}
+        run: node .github/scripts/zap-high-alerts.js report_json.json
  
       - name: k6 - Prueba de humo de rendimiento
         if: always()
