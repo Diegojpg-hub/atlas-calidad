@@ -20,7 +20,7 @@
     "helmet": "^8.3.0",
     "ipaddr.js": "1.9.1",
     "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.0",
+    "morgan": "^1.12.1",
     "multer": "^2.5.0",
     "path-to-regexp": "9.0.0",
     "pg": "^8.12.0",
