@@ -1,0 +1,73 @@
+name: k6 Atlas - Carga semanal
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  carga-semanal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      PORT_POSTGRES: '15433'
+      PORT_BACKEND: '4451'
+      PORT_FRONTEND: '3351'
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v5
+
+      - name: Preparar el entorno
+        run: |
+          set -eu
+          if [ -z "$JWT_SECRET" ]; then
+            echo "::error::Falta el secreto JWT_SECRET."
+            exit 1
+          fi
+          mkdir -p BACKEND/uploads/contracts
+          chmod -R 777 BACKEND/uploads
+
+      - name: Levantar Atlas
+        run: docker compose up -d --build
+
+      - name: Esperar a que Atlas responda
+        run: |
+          for i in $(seq 1 40); do
+            if curl --max-time 5 -sf http://localhost:4451/ > /dev/null \
+               && curl --max-time 5 -sf http://localhost:3351/ > /dev/null; then
+              echo "Atlas esta listo."
+              exit 0
+            fi
+            sleep 5
+          done
+          docker compose logs --no-color
+          exit 1
+
+      - name: Ejecutar la carga completa de k6
+        id: carga
+        run: |
+          set -euo pipefail
+          mkdir -p resultados-k6
+          docker run --rm -i --network host grafana/k6 run \
+            -e API_URL=http://localhost:4451 -e PERFIL=carga - \
+            < rendimiento/carga-clientes.js 2>&1 | tee resultados-k6/consola.txt
+
+      - name: Guardar el informe de k6
+        if: ${{ !cancelled() && (steps.carga.outcome == 'success' || steps.carga.outcome == 'failure') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-carga-semanal
+          path: resultados-k6/consola.txt
+          if-no-files-found: error
+
+      - name: Mostrar registros si falla
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Apagar Atlas
+        if: always()
+        run: docker compose down --volumes --remove-orphans
